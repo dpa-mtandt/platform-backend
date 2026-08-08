@@ -8,7 +8,7 @@ const router = Router();
 const canView = requirePermission('lms.course.view');
 
 /**
- * The current user's enrollments + summary stats ("My Learning").
+ * The current user's enrollments + summary stats ("My Training").
  *
  * There is intentionally no self-enroll endpoint: course access is assignment-gated,
  * so learners only ever have enrollments that a manager assigned to them.

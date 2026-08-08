@@ -7,7 +7,7 @@ import { ok } from '../../../utils/apiResponse';
 const router = Router();
 
 /**
- * LMS dashboard: everyone gets their personal learning stats; users who can view
+ * LMS dashboard: everyone gets their personal training stats; users who can view
  * LMS reports (lms.report.view) additionally get org-wide analytics.
  */
 router.get(

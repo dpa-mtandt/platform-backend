@@ -41,6 +41,17 @@ async function bootstrap() {
     logger.error('Failed to ensure external-app modules', err);
   }
 
+  // Normalize the Training module's display name (older data seeded it as
+  // "Learning & Training" / "LMS"). The key stays "LMS" for routes & permissions.
+  try {
+    await prisma.module.updateMany({
+      where: { key: 'LMS', OR: [{ name: { contains: 'Learning' } }, { name: 'LMS' }] },
+      data: { name: 'Training' },
+    });
+  } catch (err) {
+    logger.error('Failed to normalize the Training module name', err);
+  }
+
   const app = createApp();
   const server = app.listen(config.port, () => {
     logger.info(`🚀 MTANDT Platform API listening on port ${config.port}`);
