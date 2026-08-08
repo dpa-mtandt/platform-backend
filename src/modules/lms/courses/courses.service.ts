@@ -38,8 +38,6 @@ const cardSelect = {
   slug: true,
   summary: true,
   thumbnailUrl: true,
-  difficulty: true,
-  estimatedMinutes: true,
   status: true,
   isFeatured: true,
   publishedAt: true,
@@ -66,7 +64,6 @@ export const coursesService = {
       and.push({ status: query.status });
     }
     if (query.categoryId) and.push({ categoryId: query.categoryId });
-    if (query.difficulty) and.push({ difficulty: query.difficulty });
     if (query.featured === 'true') and.push({ isFeatured: true });
     if (query.search) {
       const s = query.search.trim();
@@ -201,8 +198,6 @@ export const coursesService = {
         description: input.description || null,
         summary: input.summary || null,
         thumbnailUrl: input.thumbnailUrl || null,
-        difficulty: input.difficulty ?? 'BEGINNER',
-        estimatedMinutes: input.estimatedMinutes ?? 0,
         status: input.status ?? 'DRAFT',
         isFeatured: input.isFeatured ?? false,
         ...(input.status === 'PUBLISHED' ? { publishedAt: new Date() } : {}),
@@ -229,8 +224,6 @@ export const coursesService = {
       ...(input.description !== undefined ? { description: input.description || null } : {}),
       ...(input.summary !== undefined ? { summary: input.summary || null } : {}),
       ...(input.thumbnailUrl !== undefined ? { thumbnailUrl: input.thumbnailUrl || null } : {}),
-      ...(input.difficulty !== undefined ? { difficulty: input.difficulty } : {}),
-      ...(input.estimatedMinutes !== undefined ? { estimatedMinutes: input.estimatedMinutes } : {}),
       ...(input.isFeatured !== undefined ? { isFeatured: input.isFeatured } : {}),
       ...(input.categoryId !== undefined ? (input.categoryId ? { category: { connect: { id: input.categoryId } } } : { category: { disconnect: true } }) : {}),
       ...(input.instructorId !== undefined ? (input.instructorId ? { instructor: { connect: { id: input.instructorId } } } : { instructor: { disconnect: true } }) : {}),

@@ -18,7 +18,6 @@ const canManage = requirePermission('dashboard.manage');
 router.get('/', canView, asyncHandler(dashboardController.list));
 
 // Admin — literal paths declared before the generic '/:id/*' routes.
-router.get('/status', canManage, asyncHandler(dashboardController.status));
 router.get('/manage', canManage, asyncHandler(dashboardController.listAll));
 router.get('/users', canManage, asyncHandler(dashboardController.users));
 router.post('/', canManage, validate({ body: createDashboardSchema }), asyncHandler(dashboardController.create));

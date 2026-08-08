@@ -1,6 +1,5 @@
 import type { Request, Response } from 'express';
 import { dashboardService, type Viewer } from './dashboard.service';
-import { diagnose } from './powerbi.service';
 import { ok, created } from '../../utils/apiResponse';
 
 function viewer(req: Request): Viewer {
@@ -23,10 +22,6 @@ export const dashboardController = {
       description: `Viewed dashboard ${result.dashboard.name}`,
     });
     return ok(res, result);
-  },
-
-  async status(_req: Request, res: Response) {
-    return ok(res, await diagnose());
   },
 
   async listAll(_req: Request, res: Response) {

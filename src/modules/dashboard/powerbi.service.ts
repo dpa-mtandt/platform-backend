@@ -68,48 +68,6 @@ async function powerBiGet<T>(path: string, token: string): Promise<T> {
   return (await res.json()) as T;
 }
 
-export interface PowerBiDiagnostics {
-  ok: boolean;
-  mode: string;
-  steps: { name: string; ok: boolean; detail: string }[];
-  workspaces: { id: string; name: string }[];
-}
-
-/** Step-by-step check of the service-principal setup (for the admin "Test connection" button). */
-export async function diagnose(): Promise<PowerBiDiagnostics> {
-  const steps: PowerBiDiagnostics['steps'] = [];
-  const workspaces: PowerBiDiagnostics['workspaces'] = [];
-
-  if (config.powerbi.mode !== 'real') {
-    steps.push({ name: 'Mode', ok: true, detail: 'Running in MOCK mode — dashboards show placeholders. Set POWERBI_MODE=real + credentials for live Power BI.' });
-    return { ok: false, mode: config.powerbi.mode, steps, workspaces };
-  }
-  const missing = (['tenantId', 'clientId', 'clientSecret'] as const).filter((k) => !config.powerbi[k]);
-  if (missing.length) {
-    steps.push({ name: 'Credentials configured', ok: false, detail: `Missing: ${missing.join(', ')}` });
-    return { ok: false, mode: config.powerbi.mode, steps, workspaces };
-  }
-  steps.push({ name: 'Credentials configured', ok: true, detail: 'Tenant, client id and secret are set.' });
-
-  let token: string;
-  try {
-    token = await getAadToken();
-    steps.push({ name: 'Azure AD sign-in', ok: true, detail: 'The service principal authenticated successfully.' });
-  } catch (err) {
-    steps.push({ name: 'Azure AD sign-in', ok: false, detail: err instanceof ApiError ? err.message : 'Could not reach Azure AD.' });
-    return { ok: false, mode: config.powerbi.mode, steps, workspaces };
-  }
-  try {
-    const groups = await powerBiGet<{ value: { id: string; name: string }[] }>('/groups', token);
-    workspaces.push(...groups.value.map((g) => ({ id: g.id, name: g.name })));
-    steps.push({ name: 'Power BI workspace access', ok: workspaces.length > 0, detail: workspaces.length ? `Can see ${workspaces.length} workspace(s).` : 'Authenticated, but not a member of any workspace.' });
-    return { ok: workspaces.length > 0, mode: config.powerbi.mode, steps, workspaces };
-  } catch (err) {
-    steps.push({ name: 'Power BI workspace access', ok: false, detail: err instanceof ApiError ? err.message : 'Power BI API call failed.' });
-    return { ok: false, mode: config.powerbi.mode, steps, workspaces };
-  }
-}
-
 export async function generateEmbedConfig(dash: DashboardEmbedInput): Promise<EmbedConfig> {
   const spConfigured = config.powerbi.mode === 'real' && Boolean(config.powerbi.tenantId && config.powerbi.clientId && config.powerbi.clientSecret);
 

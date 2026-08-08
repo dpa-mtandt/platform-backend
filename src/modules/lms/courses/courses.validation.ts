@@ -9,7 +9,6 @@ export const listCoursesQuery = z.object({
   limit: z.coerce.number().int().positive().max(50).optional(),
   search: z.string().trim().optional(),
   categoryId: z.string().uuid().optional(),
-  difficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
   featured: z.enum(['true', 'false']).optional(),
 });
@@ -21,8 +20,6 @@ export const createCourseSchema = z.object({
   summary: z.string().max(500).nullable().optional(),
   // Either an external image URL, or an uploaded-cover reference ("r2:<key>"), or empty.
   thumbnailUrl: z.string().max(2000).nullable().optional(),
-  difficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
-  estimatedMinutes: z.coerce.number().int().min(0).optional(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),
   isFeatured: z.boolean().optional(),
   categoryId: z.string().uuid().nullable().optional(),

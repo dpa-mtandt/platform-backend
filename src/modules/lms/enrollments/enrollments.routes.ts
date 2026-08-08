@@ -23,7 +23,7 @@ router.get(
       orderBy: [{ status: 'asc' }, { lastAccessedAt: 'desc' }],
       include: {
         course: {
-          select: { id: true, title: true, slug: true, summary: true, thumbnailUrl: true, difficulty: true, estimatedMinutes: true, category: { select: { name: true } } },
+          select: { id: true, title: true, slug: true, summary: true, thumbnailUrl: true, category: { select: { name: true } } },
         },
       },
     });
