@@ -4,7 +4,26 @@ import { ApiError } from '../../../utils/apiError';
 import { slugify, uniqueSlug } from '../../../utils/slug';
 import { parsePagination, buildPaginationMeta } from '../../../utils/pagination';
 import { safeUnlink } from '../media/media.stream';
+import { config } from '../../../config/env';
 import type { CreateCourseInput, ListCoursesQuery, UpdateCourseInput } from './courses.validation';
+
+/** True when a stored thumbnail is an uploaded cover (kept in R2), not an external URL. */
+function isUploadedCover(stored: string | null | undefined): boolean {
+  return !!stored && stored.startsWith('r2:');
+}
+
+/**
+ * Turn a stored thumbnail into a browser-usable URL. Uploaded covers ("r2:<key>")
+ * become an absolute link to the public cover route; external URLs pass through.
+ */
+function coverUrl(courseId: string, stored: string | null | undefined): string | null {
+  if (!stored) return null;
+  if (isUploadedCover(stored)) {
+    const origin = (config.publicApiUrl || '').replace(/\/+$/, '');
+    return `${origin}${config.apiPrefix}/media/cover/${courseId}`;
+  }
+  return stored;
+}
 
 /** The viewer's LMS capabilities — canManage gates draft visibility & authoring. */
 export interface Viewer {
@@ -75,6 +94,7 @@ export const coursesService = {
 
     const data = rows.map((c) => ({
       ...c,
+      thumbnailUrl: coverUrl(c.id, c.thumbnailUrl),
       sectionCount: c._count.sections,
       enrollmentCount: c._count.enrollments,
       overdueCount: overdueMap.get(c.id) ?? 0,
@@ -115,6 +135,7 @@ export const coursesService = {
     const lessonCount = course.sections.reduce((n, s) => n + s.lessons.length, 0);
     return {
       ...course,
+      thumbnailUrl: coverUrl(course.id, course.thumbnailUrl),
       enrollmentCount: course._count.enrollments,
       _count: undefined,
       myEnrollment: enrollment,
@@ -196,8 +217,12 @@ export const coursesService = {
   },
 
   async update(id: string, input: UpdateCourseInput, viewer: Viewer) {
-    const existing = await prisma.course.findUnique({ where: { id }, select: { id: true, publishedAt: true } });
+    const existing = await prisma.course.findUnique({ where: { id }, select: { id: true, publishedAt: true, thumbnailUrl: true } });
     if (!existing) throw ApiError.notFound('Course not found');
+    // Replacing/removing an uploaded cover → clean the old object out of R2.
+    if (input.thumbnailUrl !== undefined && isUploadedCover(existing.thumbnailUrl) && existing.thumbnailUrl !== input.thumbnailUrl) {
+      safeUnlink(existing.thumbnailUrl!.slice(3));
+    }
 
     const data: Prisma.CourseUpdateInput = {
       ...(input.title !== undefined ? { title: input.title } : {}),
@@ -226,11 +251,13 @@ export const coursesService = {
       where: { id },
       select: {
         id: true,
+        thumbnailUrl: true,
         sections: { select: { lessons: { select: { video: { select: { fileKey: true } }, documents: { select: { fileKey: true } } } } } },
       },
     });
     if (!c) throw ApiError.notFound('Course not found');
     await prisma.course.delete({ where: { id } });
+    if (isUploadedCover(c.thumbnailUrl)) safeUnlink(c.thumbnailUrl!.slice(3));
     // Prisma cascades the DB rows; clean up any uploaded files on disk too so a
     // deleted course doesn't orphan protected videos/documents.
     for (const s of c.sections) {

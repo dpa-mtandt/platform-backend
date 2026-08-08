@@ -19,7 +19,8 @@ export const createCourseSchema = z.object({
   slug: z.string().max(80).optional(),
   description: z.string().nullable().optional(),
   summary: z.string().max(500).nullable().optional(),
-  thumbnailUrl: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
+  // Either an external image URL, or an uploaded-cover reference ("r2:<key>"), or empty.
+  thumbnailUrl: z.string().max(2000).nullable().optional(),
   difficulty: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED']).optional(),
   estimatedMinutes: z.coerce.number().int().min(0).optional(),
   status: z.enum(['DRAFT', 'PUBLISHED', 'ARCHIVED']).optional(),

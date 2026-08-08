@@ -35,7 +35,7 @@ const canApprove = requirePermission('lms.download.approve');
 const ALLOWED_UPLOAD_EXT = new Set([
   '.mp4', '.webm', '.ogg', '.mov', '.m4v', '.mkv',
   '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.txt',
-  '.png', '.jpg', '.jpeg',
+  '.png', '.jpg', '.jpeg', '.webp',
 ]);
 
 function readMediaToken(raw: unknown, kind: 'video' | 'doc', id: string): void {
@@ -112,6 +112,20 @@ router.get(
     if (doc.fileKey) return streamProtectedUpload(req, res, doc.fileKey, { contentType });
     if (doc.url) return streamRemoteUrl(req, res, doc.url, { contentType });
     throw ApiError.notFound('Document has no source');
+  }),
+);
+
+// Public course cover image. No auth — cover images aren't sensitive and <img> tags
+// can't send tokens. Scoped to a course id and streams ONLY that course's own uploaded
+// cover ("r2:<key>"), so it can't be used to reach protected media by key.
+router.get(
+  '/cover/:id',
+  asyncHandler(async (req, res) => {
+    const course = await prisma.course.findUnique({ where: { id: req.params.id }, select: { thumbnailUrl: true } });
+    const stored = course?.thumbnailUrl || '';
+    if (!stored.startsWith('r2:')) throw ApiError.notFound('Cover not found');
+    const key = stored.slice(3);
+    return streamProtectedUpload(req, res, key, { contentType: contentTypeFor(key) });
   }),
 );
 
